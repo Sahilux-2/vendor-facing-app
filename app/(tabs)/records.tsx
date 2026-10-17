@@ -8,13 +8,12 @@ import {
   Divider,
   EmptyState,
   FadeIn,
-  Icon,
   ScreenHeader,
   Tap,
   useTopInset,
 } from '@/components/ui';
 import { PROFILE } from '@/data/menu';
-import { dateKey, fmtU, longDate, orderTotals, slotLabel, timeOfDay, utensilsLabel } from '@/lib/format';
+import { dateKey, fmtU, longDate, orderTotals, slotLabel } from '@/lib/format';
 import { useStore } from '@/store/store';
 import { Order } from '@/store/types';
 import { colors, radius, space } from '@/theme';
@@ -91,7 +90,7 @@ export default function RecordsScreen() {
       contentContainerStyle={{ paddingTop: top, paddingHorizontal: space.xl, paddingBottom: space.giant, gap: space.xl }}
       showsVerticalScrollIndicator={false}
     >
-      <ScreenHeader title="Records" subtitle={`${PROFILE.hostel} · ${range.label}`} />
+      <ScreenHeader title="Records" subtitle={range.label} />
 
       <FadeIn delay={60}>
         <View
@@ -127,21 +126,10 @@ export default function RecordsScreen() {
       </FadeIn>
 
       <FadeIn delay={100}>
-        <Card style={{ gap: space.lg }}>
-          <View style={{ flexDirection: 'row' }}>
-            <Metric icon="cube" value={String(orders.length)} label="Orders" />
-            <Metric icon="scale" value={totals.kg.toFixed(1)} unit="kg" label="Food saved" />
-            <Metric icon="people" value={String(Math.round(totals.meals))} label="People fed" />
-          </View>
-          <Divider />
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <AppText variant="caption" color={colors.textMuted}>
-              {utensilsLabel(totals.utensils)} donated
-            </AppText>
-            <AppText variant="caption" color={colors.textMuted}>
-              {noSurplusCount} meals with no surplus
-            </AppText>
-          </View>
+        <Card style={{ flexDirection: 'row' }}>
+          <Metric value={String(orders.length)} label="Orders" />
+          <Metric value={totals.kg.toFixed(1)} unit="kg" label="Food saved" />
+          <Metric value={String(Math.round(totals.meals))} label="People fed" />
         </Card>
       </FadeIn>
 
@@ -186,29 +174,26 @@ export default function RecordsScreen() {
         )}
       </View>
 
-      <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-        <Icon name="cloud-offline" size={24} color={colors.textMuted} />
-        <View style={{ flex: 1 }}>
-          <AppText variant="bodyBold">Demo: poor network</AppText>
+      {__DEV__ ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <AppText variant="caption" color={colors.textMuted}>
-            Posts are saved on the phone and sent when it is off.
+            Test: simulate poor network
           </AppText>
+          <Switch
+            value={state.offline}
+            onValueChange={(v) => dispatch({ type: 'SET_OFFLINE', value: v })}
+            trackColor={{ true: colors.accent, false: colors.divider }}
+            thumbColor={colors.white}
+          />
         </View>
-        <Switch
-          value={state.offline}
-          onValueChange={(v) => dispatch({ type: 'SET_OFFLINE', value: v })}
-          trackColor={{ true: colors.accent, false: colors.divider }}
-          thumbColor={colors.white}
-        />
-      </Card>
+      ) : null}
     </ScrollView>
   );
 }
 
-function Metric({ icon, value, unit, label }: { icon: React.ComponentProps<typeof Icon>['name']; value: string; unit?: string; label: string }) {
+function Metric({ value, unit, label }: { value: string; unit?: string; label: string }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: space.xs }}>
-      <Icon name={icon} size={24} color={colors.accent} />
       <MotiView key={value} from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300 }}>
         <AppText variant="h1">
           {value}
@@ -226,22 +211,13 @@ function HistoryRow({ order: o }: { order: Order }) {
   const t = orderTotals(o);
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg }}>
-      <Icon name="checkmark-circle" size={24} color={colors.accent} />
       <View style={{ flex: 1 }}>
         <AppText variant="bodyBold">{o.ngo.name}</AppText>
         <AppText variant="caption" color={colors.textMuted}>
-          {longDate(o.deliveredAt!)} · {timeOfDay(o.deliveredAt!)} · {slotLabel(o.slot)}
-        </AppText>
-        <AppText variant="caption" color={colors.textMuted}>
-          {o.items.map((i) => i.name).join(', ')}
+          {longDate(o.deliveredAt!)} · {slotLabel(o.slot)}
         </AppText>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <AppText variant="bodyBold">{t.kg.toFixed(1)} kg</AppText>
-        <AppText variant="caption" color={colors.textMuted}>
-          {Math.round(t.meals)} fed
-        </AppText>
-      </View>
+      <AppText variant="bodyBold">{t.kg.toFixed(1)} kg</AppText>
     </View>
   );
 }

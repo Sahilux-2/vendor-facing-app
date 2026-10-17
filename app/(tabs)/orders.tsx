@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { AnimatePresence, MotiView } from 'moti';
 import React, { useState } from 'react';
-import { Image, Linking, ScrollView, View } from 'react-native';
+import { Linking, ScrollView, View } from 'react-native';
 import { LinearTransition } from 'react-native-reanimated';
 import {
   AppText,
@@ -27,7 +27,6 @@ const STEPS: { id: OrderStatus; label: string }[] = [
   { id: 'packing', label: 'Pack' },
   { id: 'ready', label: 'Ready' },
   { id: 'in_transit', label: 'On the way' },
-  { id: 'delivered', label: 'Delivered' },
 ];
 
 export default function ActiveOrdersScreen() {
@@ -50,20 +49,15 @@ export default function ActiveOrdersScreen() {
         contentContainerStyle={{ paddingTop: top, paddingHorizontal: space.xl, paddingBottom: space.giant, gap: space.xl }}
         showsVerticalScrollIndicator={false}
       >
-        <ScreenHeader title="Active Orders" subtitle="Pack, hand over and track delivery" />
+        <ScreenHeader title="Active Orders" />
 
         {state.utensilDeficit > 0 ? (
           <FadeIn>
             <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
               <Icon name="alert-circle" size={28} color={colors.warning} />
-              <View style={{ flex: 1 }}>
-                <AppText variant="bodyBold" color={colors.warning}>
-                  {utensilsLabel(state.utensilDeficit)} owed
-                </AppText>
-                <AppText variant="caption" color={colors.textMuted}>
-                  Logistics will return them on the next pickup.
-                </AppText>
-              </View>
+              <AppText variant="bodyBold" color={colors.warning} style={{ flex: 1 }}>
+                {utensilsLabel(state.utensilDeficit)} owed by logistics
+              </AppText>
             </Card>
           </FadeIn>
         ) : null}
@@ -147,21 +141,15 @@ function ListingCard({ listing: l }: { listing: Listing }) {
 
   return (
     <Card style={{ gap: space.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-          <PulseDot />
-          <AppText variant="title">Waiting for NGOs</AppText>
-        </View>
-        <Tag label={slotLabel(l.slot)} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+        <PulseDot />
+        <AppText variant="title">{slotLabel(l.slot)} · Waiting for NGOs</AppText>
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
         <Icon name="timer" size={20} color={urgent ? colors.danger : colors.textMuted} />
         <AppText variant="bodyBold" color={urgent ? colors.danger : colors.text}>
-          {countdown(left)}
-        </AppText>
-        <AppText variant="caption" color={colors.textMuted}>
-          food-safety time left
+          {countdown(left)} left
         </AppText>
       </View>
 
@@ -189,22 +177,9 @@ function ListingCard({ listing: l }: { listing: Listing }) {
         ))}
       </View>
 
-      <Divider />
-
-      <View style={{ gap: space.xs }}>
-        <Tag
-          icon={l.synced ? 'checkmark-circle' : 'cloud-offline'}
-          color={l.synced ? colors.accent : colors.warning}
-          label={l.synced ? 'Sent to nearby NGOs' : 'Saved on phone. Sending when network is back'}
-        />
-        {l.photoUri ? (
-          <Tag
-            icon={l.photoUploaded ? 'image' : 'cloud-upload'}
-            color={l.photoUploaded ? colors.accent : colors.textMuted}
-            label={l.photoUploaded ? 'Photo uploaded' : 'Photo uploading in background'}
-          />
-        ) : null}
-      </View>
+      {!l.synced ? (
+        <Tag icon="cloud-offline" color={colors.warning} label="Saved on phone. Sending when network is back" />
+      ) : null}
 
       <View style={{ flexDirection: 'row', gap: space.sm }}>
         <Button
@@ -267,14 +242,11 @@ function OrderCard({ order: o, onHandover, onReduce }: { order: Order; onHandove
     <Card style={{ gap: space.md }}>
       <Progress status={o.status} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.md }}>
-        <View style={{ flex: 1 }}>
-          <AppText variant="title">{o.ngo.name}</AppText>
-          <AppText variant="caption" color={colors.textMuted}>
-            {o.ngo.distanceKm} km away · {o.ngo.recipients}
-          </AppText>
-        </View>
-        <Tag label={slotLabel(o.slot)} />
+      <View>
+        <AppText variant="title">{o.ngo.name}</AppText>
+        <AppText variant="caption" color={colors.textMuted}>
+          {o.ngo.distanceKm} km away · {o.ngo.recipients}
+        </AppText>
       </View>
 
       <Divider />
@@ -287,15 +259,12 @@ function OrderCard({ order: o, onHandover, onReduce }: { order: Order; onHandove
           style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}
         >
           <Icon name="bicycle" size={24} color={colors.accent} />
-          <AppText variant="bodyBold" color={colors.accent}>
-            On the way to {o.ngo.name}
+          <AppText variant="bodyBold" color={colors.accent} style={{ flex: 1 }}>
+            {o.rider.name} is taking {utensilsLabel(total)}
           </AppText>
         </MotiView>
       ) : (
         <View style={{ gap: space.sm }}>
-          <AppText variant="captionBold" color={colors.textMuted}>
-            PACK THESE UTENSILS
-          </AppText>
           {o.items.map((i) => (
             <View key={i.dishId} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <AppText variant="bodyBold">{i.name}</AppText>
@@ -307,6 +276,8 @@ function OrderCard({ order: o, onHandover, onReduce }: { order: Order; onHandove
         </View>
       )}
 
+      {o.status !== 'in_transit' ? (
+        <>
       <Divider />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
@@ -314,13 +285,7 @@ function OrderCard({ order: o, onHandover, onReduce }: { order: Order; onHandove
         <View style={{ flex: 1 }}>
           <AppText variant="bodyBold">{o.rider.name}</AppText>
           <AppText variant="caption" color={late ? colors.danger : colors.textMuted}>
-            {o.status === 'in_transit'
-              ? 'Picked up'
-              : o.riderArrivedAt
-                ? 'At the gate'
-                : late
-                  ? 'Running late'
-                  : `Arriving in ${mins} min`}
+            {o.riderArrivedAt ? 'At the gate' : late ? 'Running late' : `Arriving in ${mins} min`}
           </AppText>
         </View>
         <Tap onPress={call}>
@@ -343,6 +308,8 @@ function OrderCard({ order: o, onHandover, onReduce }: { order: Order; onHandove
           </View>
         </Tap>
       </View>
+        </>
+      ) : null}
 
       {late ? (
         <Button label="Request another rider" icon="swap-horizontal" variant="secondary" onPress={() => dispatch({ type: 'REASSIGN', id: o.id, now: Date.now() })} />
@@ -384,17 +351,15 @@ function OrderEditRow({ onReduce, onCancel }: { onReduce: () => void; onCancel: 
 function DeliveredCard({ order: o }: { order: Order }) {
   const t = orderTotals(o);
   return (
-    <Card style={{ gap: space.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-        <MotiView from={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }}>
-          <Icon name="checkmark-circle" size={32} color={colors.accent} />
-        </MotiView>
-        <View style={{ flex: 1 }}>
-          <AppText variant="bodyBold">Reached {o.ngo.name}</AppText>
-          <AppText variant="caption" color={colors.textMuted}>
-            {utensilsLabel(t.utensils)} · {Math.round(t.meals)} people fed · Handover photo received
-          </AppText>
-        </View>
+    <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+      <MotiView from={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }}>
+        <Icon name="checkmark-circle" size={32} color={colors.accent} />
+      </MotiView>
+      <View style={{ flex: 1 }}>
+        <AppText variant="bodyBold">Delivered to {o.ngo.name}</AppText>
+        <AppText variant="caption" color={colors.textMuted}>
+          About {Math.round(t.meals)} people fed
+        </AppText>
       </View>
     </Card>
   );

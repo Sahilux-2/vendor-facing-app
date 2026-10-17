@@ -106,7 +106,7 @@ export default function LogSurplusScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <ScreenHeader title="Log Surplus" subtitle={`${longDate(Date.now())} · Any food left over?`} />
+        <ScreenHeader title="Log Surplus" subtitle={longDate(Date.now())} />
 
         <FadeIn delay={60}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm, paddingVertical: space.xs }}>
@@ -128,12 +128,7 @@ export default function LogSurplusScreen() {
               <MotiView from={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 14 }}>
                 <Icon name="checkmark-circle" size={48} color={colors.accent} />
               </MotiView>
-              <AppText variant="title">{noSurplus ? `No surplus logged` : `${slot.label} surplus posted`}</AppText>
-              <AppText variant="body" color={colors.textMuted} style={{ textAlign: 'center' }}>
-                {noSurplus
-                  ? `Nothing left from ${slot.label}. Thank you!`
-                  : 'NGOs nearby can see it now. Track it in Active Orders.'}
-              </AppText>
+              <AppText variant="title">{noSurplus ? 'No surplus logged' : `${slot.label} surplus posted`}</AppText>
               {noSurplus ? (
                 <Button
                   label="Undo"
@@ -156,12 +151,9 @@ export default function LogSurplusScreen() {
               >
                 <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
                   <Icon name="checkmark-done-circle" size={32} color={colors.accent} />
-                  <View style={{ flex: 1 }}>
-                    <AppText variant="bodyBold">No surplus</AppText>
-                    <AppText variant="caption" color={colors.textMuted}>
-                      Tap once if all {slot.label.toLowerCase()} food was finished
-                    </AppText>
-                  </View>
+                  <AppText variant="bodyBold" style={{ flex: 1 }}>
+                    No surplus
+                  </AppText>
                   <Icon name="chevron-forward" size={20} color={colors.textMuted} />
                 </Card>
               </Tap>
@@ -177,7 +169,6 @@ export default function LogSurplusScreen() {
                       <Card style={{ padding: 0, borderColor: sel ? colors.accent : colors.divider, borderWidth: sel ? 2 : 1 }}>
                         <Tap onPress={() => toggle(d.id)} scale={0.99}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg }}>
-                            <Icon name={d.icon as any} size={28} color={sel ? colors.accent : colors.textMuted} />
                             <AppText variant="bodyBold" style={{ flex: 1 }}>
                               {d.name}
                             </AppText>
@@ -196,9 +187,6 @@ export default function LogSurplusScreen() {
                             >
                               <Divider />
                               <View style={{ padding: space.lg, gap: space.md }}>
-                                <AppText variant="caption" color={colors.textMuted}>
-                                  How many utensils are filled?
-                                </AppText>
                                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
                                   {QUICK.map((q) => (
                                     <Chip
@@ -209,12 +197,9 @@ export default function LogSurplusScreen() {
                                     />
                                   ))}
                                 </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                  <AppText variant="body" color={colors.textMuted}>
-                                    Fine tune
-                                  </AppText>
+                                {sel >= 3 ? (
                                   <Stepper value={sel} onChange={(v) => setPicked((p) => ({ ...p, [d.id]: v }))} />
-                                </View>
+                                ) : null}
                               </View>
                             </MotiView>
                           ) : null}
@@ -247,21 +232,17 @@ export default function LogSurplusScreen() {
               </Tap>
             </FadeIn>
 
-            <FadeIn delay={180} style={{ gap: space.md }}>
-              <AppText variant="title">Photo (optional)</AppText>
+            <FadeIn delay={180}>
               <Tap onPress={takePhoto}>
                 <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
                   {photo ? (
-                    <Image source={{ uri: photo }} style={{ width: 64, height: 64, borderRadius: radius.md }} />
+                    <Image source={{ uri: photo }} style={{ width: 48, height: 48, borderRadius: radius.md }} />
                   ) : (
-                    <Icon name="camera" size={32} color={colors.textMuted} />
+                    <Icon name="camera" size={28} color={colors.textMuted} />
                   )}
-                  <View style={{ flex: 1 }}>
-                    <AppText variant="bodyBold">{photo ? 'Retake photo' : 'Take a photo'}</AppText>
-                    <AppText variant="caption" color={colors.textMuted}>
-                      Helps NGOs trust the food. You can skip this.
-                    </AppText>
-                  </View>
+                  <AppText variant="bodyBold" style={{ flex: 1 }}>
+                    {photo ? 'Retake photo' : 'Add photo (optional)'}
+                  </AppText>
                 </Card>
               </Tap>
             </FadeIn>
