@@ -13,7 +13,7 @@ import {
   useTopInset,
 } from '@/components/ui';
 import { PROFILE } from '@/data/menu';
-import { dateKey, fmtU, longDate, orderTotals, slotLabel } from '@/lib/format';
+import { longDate, orderTotals, slotLabel, utensilsLabel } from '@/lib/format';
 import { useStore } from '@/store/store';
 import { Order } from '@/store/types';
 import { colors, radius, space } from '@/theme';
@@ -59,10 +59,6 @@ export default function RecordsScreen() {
     },
     { utensils: 0, kg: 0, meals: 0 },
   );
-  const noSurplusCount = state.noSurplus.filter((n) => n.at >= range.from && n.at < range.to).length;
-
-  const bars = useMemo(() => buildBars(period, orders, range.from, now), [period, orders, range.from, now]);
-  const maxBar = Math.max(1, ...bars.map((b) => b.value));
 
   const share = async () => {
     const lines = [
@@ -70,9 +66,8 @@ export default function RecordsScreen() {
       `Period: ${range.label}`,
       ``,
       `Orders delivered: ${orders.length}`,
-      `Food saved: ${totals.kg.toFixed(1)} kg (${fmtU(totals.utensils)} utensils)`,
+      `Food saved: ${totals.kg.toFixed(1)} kg`,
       `People fed: about ${Math.round(totals.meals)}`,
-      `Meals with no surplus: ${noSurplusCount}`,
       ``,
       `Prepared by ${PROFILE.vendor}`,
     ];
@@ -90,7 +85,7 @@ export default function RecordsScreen() {
       contentContainerStyle={{ paddingTop: top, paddingHorizontal: space.xl, paddingBottom: space.giant, gap: space.xl }}
       showsVerticalScrollIndicator={false}
     >
-      <ScreenHeader title="Records" subtitle={range.label} />
+      <ScreenHeader title="Records" />
 
       <FadeIn delay={60}>
         <View
@@ -134,27 +129,6 @@ export default function RecordsScreen() {
       </FadeIn>
 
       <FadeIn delay={140}>
-        <Card style={{ gap: space.md }}>
-          <AppText variant="bodyBold">Utensils donated</AppText>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: space.xs, height: 128 }}>
-            {bars.map((b, i) => (
-              <View key={`${period}-${b.label}`} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: space.xs, height: '100%' }}>
-                <MotiView
-                  from={{ height: 0 }}
-                  animate={{ height: Math.max(4, (b.value / maxBar) * 96) }}
-                  transition={{ type: 'timing', duration: 500, delay: i * 30 }}
-                  style={{ width: '60%', maxWidth: space.xxl, borderRadius: 4, backgroundColor: b.value ? colors.accent : colors.divider }}
-                />
-                <AppText variant="captionBold" color={colors.textMuted}>
-                  {b.label}
-                </AppText>
-              </View>
-            ))}
-          </View>
-        </Card>
-      </FadeIn>
-
-      <FadeIn delay={180}>
         <Button label="Share report with Warden" icon="share-social" onPress={share} />
       </FadeIn>
 
@@ -217,34 +191,7 @@ function HistoryRow({ order: o }: { order: Order }) {
           {longDate(o.deliveredAt!)} · {slotLabel(o.slot)}
         </AppText>
       </View>
-      <AppText variant="bodyBold">{t.kg.toFixed(1)} kg</AppText>
+      <AppText variant="bodyBold">{utensilsLabel(t.utensils)}</AppText>
     </View>
   );
-}
-
-function buildBars(period: Period, orders: Order[], from: number, now: number) {
-  const u = (o: Order) => orderTotals(o).utensils;
-  if (period === 'Daily') {
-    return (['breakfast', 'lunch', 'snacks', 'dinner'] as const).map((s) => ({
-      label: slotLabel(s).slice(0, 3),
-      value: orders.filter((o) => o.slot === s).reduce((a, o) => a + u(o), 0),
-    }));
-  }
-  if (period === 'Weekly') {
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = from + i * DAY;
-      const key = dateKey(d);
-      return {
-        label: new Date(d).toLocaleDateString('en-IN', { weekday: 'narrow' }),
-        value: orders.filter((o) => dateKey(o.deliveredAt!) === key).reduce((a, o) => a + u(o), 0),
-      };
-    });
-  }
-  const weeks = Math.ceil(new Date(new Date(now).getFullYear(), new Date(now).getMonth() + 1, 0).getDate() / 7);
-  return Array.from({ length: weeks }, (_, w) => ({
-    label: `W${w + 1}`,
-    value: orders
-      .filter((o) => Math.floor((new Date(o.deliveredAt!).getDate() - 1) / 7) === w)
-      .reduce((a, o) => a + u(o), 0),
-  }));
 }

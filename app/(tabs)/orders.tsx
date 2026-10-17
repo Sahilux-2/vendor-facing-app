@@ -37,10 +37,7 @@ export default function ActiveOrdersScreen() {
 
   const listings = state.listings.filter((l) => l.status === 'open' || (l.status === 'expired' && !l.disposed));
   const active = state.orders.filter((o) => o.status === 'packing' || o.status === 'ready' || o.status === 'in_transit');
-  const delivered = state.orders
-    .filter((o) => o.status === 'delivered' && o.deliveredAt && Date.now() - o.deliveredAt < 6 * 3600_000 && o.id.startsWith('O'))
-    .slice(0, 3);
-  const empty = !listings.length && !active.length && !delivered.length;
+  const empty = !listings.length && !active.length;
   const reduceOrder = state.orders.find((o) => o.id === reduce) ?? null;
 
   return (
@@ -94,17 +91,6 @@ export default function ActiveOrdersScreen() {
             ))}
           </AnimatePresence>
         </MotiView>
-
-        {delivered.length ? (
-          <View style={{ gap: space.md }}>
-            <AppText variant="title">Delivered</AppText>
-            {delivered.map((o) => (
-              <FadeIn key={o.id}>
-                <DeliveredCard order={o} />
-              </FadeIn>
-            ))}
-          </View>
-        ) : null}
       </ScrollView>
 
       <HandoverSheet order={handover} deficit={state.utensilDeficit} onClose={() => setHandover(null)} />
@@ -245,7 +231,7 @@ function OrderCard({ order: o, onHandover, onReduce }: { order: Order; onHandove
       <View>
         <AppText variant="title">{o.ngo.name}</AppText>
         <AppText variant="caption" color={colors.textMuted}>
-          {o.ngo.distanceKm} km away · {o.ngo.recipients}
+          {o.ngo.recipients}
         </AppText>
       </View>
 
@@ -348,23 +334,6 @@ function OrderEditRow({ onReduce, onCancel }: { onReduce: () => void; onCancel: 
   );
 }
 
-function DeliveredCard({ order: o }: { order: Order }) {
-  const t = orderTotals(o);
-  return (
-    <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-      <MotiView from={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }}>
-        <Icon name="checkmark-circle" size={32} color={colors.accent} />
-      </MotiView>
-      <View style={{ flex: 1 }}>
-        <AppText variant="bodyBold">Delivered to {o.ngo.name}</AppText>
-        <AppText variant="caption" color={colors.textMuted}>
-          About {Math.round(t.meals)} people fed
-        </AppText>
-      </View>
-    </Card>
-  );
-}
-
 // ---------- Handover & utensil swap ----------
 function HandoverSheet({ order, deficit, onClose }: { order: Order | null; deficit: number; onClose: () => void }) {
   const { dispatch } = useStore();
@@ -386,9 +355,6 @@ function HandoverSheet({ order, deficit, onClose }: { order: Order | null; defic
 
   return (
     <Sheet visible={!!order} onClose={onClose} title="Handover & swap">
-      <AppText variant="body" color={colors.textMuted}>
-        Give {fmtU(count)} filled {plural(count, 'utensil')} to {o?.rider.name}. Take the same number of clean empty ones back.
-      </AppText>
       {deficit > 0 ? (
         <Tap onPress={() => setBacklog((b) => !b)} scale={0.99}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: space.giant }}>
@@ -410,9 +376,6 @@ function ReduceSheet({ order, onClose }: { order: Order | null; onClose: () => v
   const { dispatch } = useStore();
   return (
     <Sheet visible={!!order} onClose={onClose} title="Reduce amount">
-      <AppText variant="body" color={colors.textMuted}>
-        Less food left? Change it here. {order?.ngo.name} and the rider are told straight away.
-      </AppText>
       {order?.items.map((i) => (
         <View key={i.dishId} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <AppText variant="bodyBold" style={{ flex: 1 }}>

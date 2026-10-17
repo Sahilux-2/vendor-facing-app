@@ -20,7 +20,7 @@ import {
   useTopInset,
 } from '@/components/ui';
 import { CUSTOM_CATEGORIES, Dish, SLOTS, SlotId, currentSlot, getMenu, slotById } from '@/data/menu';
-import { dateKey, fmtU, longDate, utensilsLabel } from '@/lib/format';
+import { dateKey, fmtU, utensilsLabel } from '@/lib/format';
 import { useStore } from '@/store/store';
 import { Item } from '@/store/types';
 import { colors, radius, space } from '@/theme';
@@ -106,7 +106,7 @@ export default function LogSurplusScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <ScreenHeader title="Log Surplus" subtitle={longDate(Date.now())} />
+        <ScreenHeader title="Log Surplus" />
 
         <FadeIn delay={60}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm, paddingVertical: space.xs }}>
@@ -320,9 +320,6 @@ function CustomDishSheet({
 
   return (
     <Sheet visible={visible} onClose={onClose} title="Add custom dish">
-      <AppText variant="caption" color={colors.textMuted}>
-        Pick a type. Use the mic on your keyboard to say the name.
-      </AppText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
         {CUSTOM_CATEGORIES.map((c) => (
           <Chip key={c.id} label={c.label} icon={c.icon} selected={c.id === catId} onPress={() => setCatId(c.id)} />
