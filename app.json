@@ -34,7 +34,9 @@
           "cameraPermission": "Allow the app to take a photo of the leftover food."
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-sharing",
+      "expo-status-bar"
     ]
   }
 }
