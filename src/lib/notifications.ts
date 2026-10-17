@@ -1,24 +1,41 @@
 import { SLOTS } from '@/data/menu';
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
 
-const supported = Platform.OS !== 'web';
+type NotificationsModule = typeof import('expo-notifications');
 
-if (supported) {
-  // Foreground events use the in-app banner, so the OS banner is only for background.
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-      shouldShowBanner: false,
-      shouldShowList: false,
-    }),
-  });
+let cached: NotificationsModule | null | undefined;
+
+/**
+ * Loads expo-notifications lazily. Some Expo Go builds miss its native modules, and a
+ * top-level import would crash the whole app. If loading fails, notifications are skipped
+ * and the in-app banner is used instead.
+ */
+function getNotifications(): NotificationsModule | null {
+  if (Platform.OS === 'web') return null;
+  if (cached !== undefined) return cached;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('expo-notifications') as NotificationsModule;
+    // Foreground events use the in-app banner, so the OS banner is only for background.
+    mod.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+        shouldShowBanner: false,
+        shouldShowList: false,
+      }),
+    });
+    cached = mod;
+  } catch {
+    cached = null;
+  }
+  return cached;
 }
 
-/** Asks for permission and schedules one daily "any food left?" prompt per meal slot. */
+/** Asks for permission and schedules one daily "any food left?" local prompt per meal slot. */
 export async function setupNotifications() {
-  if (!supported) return;
+  const Notifications = getNotifications();
+  if (!Notifications) return;
   try {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
@@ -48,7 +65,8 @@ export async function setupNotifications() {
 }
 
 export async function notifyNow(title: string, body: string) {
-  if (!supported) return;
+  const Notifications = getNotifications();
+  if (!Notifications) return;
   try {
     await Notifications.scheduleNotificationAsync({ content: { title, body }, trigger: null });
   } catch {
