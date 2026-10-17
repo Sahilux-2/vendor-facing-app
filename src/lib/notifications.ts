@@ -1,5 +1,9 @@
 import { SLOTS } from '@/data/menu';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
+
+/** Expo Go (SDK 57) does not ship the native modules expo-notifications needs. */
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 type NotificationsModule = typeof import('expo-notifications');
 
@@ -11,7 +15,7 @@ let cached: NotificationsModule | null | undefined;
  * and the in-app banner is used instead.
  */
 function getNotifications(): NotificationsModule | null {
-  if (Platform.OS === 'web') return null;
+  if (Platform.OS === 'web' || isExpoGo) return null;
   if (cached !== undefined) return cached;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
